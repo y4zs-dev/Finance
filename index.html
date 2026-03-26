@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance - Trading Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, .brand, .currency-symbol { font-family: 'League Spartan', sans-serif; }
+        
+        /* Dark Theme (Default) */
+        :root {
+            --bg-main: #000000;
+            --bg-card: #0a0a0a;
+            --bg-inner: #171717;
+            --bg-hover: #262626;
+            --text-main: #ffffff;
+            --text-muted: #737373;
+            --border: #262626;
+        }
+        
+        /* Light Theme */
+        body.light-mode {
+            --bg-main: #f5f5f5;
+            --bg-card: #ffffff;
+            --bg-inner: #e5e5e5;
+            --bg-hover: #d4d4d4;
+            --text-main: #000000;
+            --text-muted: #525252;
+            --border: #d4d4d4;
+        }
+        
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .bg-card { background-color: var(--bg-card); }
+        .bg-inner { background-color: var(--bg-inner); }
+        .bg-hover:hover { background-color: var(--bg-hover); }
+        .text-muted { color: var(--text-muted); }
+        .border-themed { border-color: var(--border); }
+        
+        input, select {
+            background-color: var(--bg-inner) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border) !important;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-card); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 3px; }
+        
+        .price-up { color: #22c55e; animation: flashGreen 0.3s ease; }
+        .price-down { color: #ef4444; animation: flashRed 0.3s ease; }
+        @keyframes flashGreen { 0% { background: rgba(34, 197, 94, 0.3); } 100% { background: transparent; } }
+        @keyframes flashRed { 0% { background: rgba(239, 68, 68, 0.3); } 100% { background: transparent; } }
+        
+        .glow { box-shadow: 0 0 20px rgba(255,255,255,0.03); }
+        body.light-mode .glow { box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        
+        .btn-primary { background: var(--text-main); color: var(--bg-main); transition: all 0.2s; }
+        .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+        .btn-sell { background: #ef4444; color: white; }
+        .btn-sell:hover { background: #dc2626; }
+        .btn-buy { background: #22c55e; color: white; }
+        .btn-buy:hover { background: #16a34a; }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .tab-active { border-bottom: 2px solid var(--text-main); color: var(--text-main); }
+        .tab-inactive { border-bottom: 2px solid transparent; color: var(--text-muted); }
+        
+        .toggle-switch {
+            position: relative; width: 50px; height: 26px;
+            background: var(--bg-inner); border-radius: 13px;
+            cursor: pointer; transition: background 0.3s;
+        }
+        .toggle-switch.active { background: #22c55e; }
+        .toggle-switch::after {
+            content: ''; position: absolute;
+            width: 22px; height: 22px;
+            background: white; border-radius: 50%;
+            top: 2px; left: 2px; transition: transform 0.3s;
+        }
+        .toggle-switch.active::after { transform: translateX(24px); }
+
+        .order-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+        }
+        .order-buy { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .order-sell { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        
+        .market-tab { transition: all 0.2s; }
+        .market-tab.active { 
+            background: var(--text-main); 
+            color: var(--bg-main); 
+        }
+        
+        .stock-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            object-fit: contain;
+            background: white;
+            padding: 4px;
+        }
+        
+        .timeframe-btn.active {
+            background: var(--text-main) !important;
+            color: var(--bg-main) !important;
+        }
+        
+        .profit-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .profit-positive { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .profit-negative { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="border-b border-themed px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-8">
+                <h1 class="brand text-3xl font-black tracking-tight">FINANCE</h1>
+                <nav class="hidden md:flex items-center gap-6">
+                    <button onclick="showSection('trade')" class="nav-btn text-sm font-semibold text-muted hover:opacity-70 transition">Trade</button>
+                    <button onclick="showSection('orders')" class="nav-btn text-sm font-semibold text-muted hover:opacity-70 transition">Auto Orders</button>
+                    <button onclick="showSection('wallet')" class="nav-btn text-sm font-semibold text-muted hover:opacity-70 transition">Wallet</button>
+                    <button onclick="showSection('bank')" class="nav-btn text-sm font-semibold text-muted hover:opacity-70 transition">Bank</button>
+                    <button onclick="showSection('settings')" class="nav-btn text-sm font-semibold text-muted hover:opacity-70 transition">Settings</button>
+                </nav>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <p class="text-xs text-muted">User ID</p>
+                    <p id="userId" class="text-sm font-mono font-bold"></p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-inner flex items-center justify-center">
+                    <span class="text-lg">👤</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Nav -->
+    <div class="md:hidden flex border-b border-themed overflow-x-auto">
+        <button onclick="showSection('trade')" class="nav-btn flex-1 px-4 py-3 text-xs font-semibold text-muted">Trade</button>
+        <button onclick="showSection('orders')" class="nav-btn flex-1 px-4 py-3 text-xs font-semibold text-muted">Orders</button>
+        <button onclick="showSection('wallet')" class="nav-btn flex-1 px-4 py-3 text-xs font-semibold text-muted">Wallet</button>
+        <button onclick="showSection('bank')" class="nav-btn flex-1 px-4 py-3 text-xs font-semibold text-muted">Bank</button>
+        <button onclick="showSection('settings')" class="nav-btn flex-1 px-4 py-3 text-xs font-semibold text-muted">Settings</button>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto p-6">
+        <!-- Trade Section -->
+        <section id="trade-section" class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Market List -->
+            <div class="lg:col-span-1 bg-card rounded-2xl p-4 glow border border-themed">
+                <div class="flex gap-2 mb-4">
+                    <button onclick="setMarketType('crypto')" id="cryptoTab" class="market-tab flex-1 px-3 py-2 rounded-lg text-sm font-bold active">Crypto</button>
+                    <button onclick="setMarketType('stocks')" id="stocksTab" class="market-tab flex-1 px-3 py-2 rounded-lg text-sm font-bold bg-inner">Stocks</button>
+                </div>
+                <div class="space-y-2 max-h-[500px] overflow-y-auto" id="marketList"></div>
+            </div>
+
+            <!-- Chart Area -->
+            <div class="lg:col-span-2 bg-card rounded-2xl p-4 glow border border-themed">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <span id="chartSymbol" class="currency-symbol text-4xl">BTC</span>
+                            <div>
+                                <h2 id="chartName" class="font-bold text-xl">Bitcoin</h2>
+                                <p id="chartPair" class="text-muted text-sm">BTC/USD</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p id="chartPrice" class="text-3xl font-black">$0.00</p>
+                        <p id="chartChange" class="text-green-500 text-sm font-semibold">+0.00%</p>
+                    </div>
+                </div>
+                <div class="rounded-xl h-80 relative bg-inner">
+                    <canvas id="priceChart" class="w-full h-full"></canvas>
+                </div>
+                <div class="flex gap-2 mt-4 flex-wrap">
+                    <button onclick="setTimeframe('5s')" class="timeframe-btn px-3 py-1 text-xs rounded bg-inner bg-hover">5s</button>
+                    <button onclick="setTimeframe('1m')" class="timeframe-btn px-3 py-1 text-xs rounded bg-inner bg-hover">1m</button>
+                    <button onclick="setTimeframe('5m')" class="timeframe-btn px-3 py-1 text-xs rounded bg-inner bg-hover">5m</button>
+                    <button onclick="setTimeframe('15m')" class="timeframe-btn px-3 py-1 text-xs rounded bg-inner bg-hover active">15m</button>
+                    <button onclick="setTimeframe('1h')" class="timeframe-btn px-3 py-1 text-xs rounded bg-inner bg-hover">1H</button>
+                    <button onclick="setTimeframe('4h')" class="timeframe-btn px-3 py-1 text-xs rounded bg-inner bg-hover">4H</button>
+                    <button onclick="setTimeframe('1d')" class="timeframe-btn px-3 py-1 text-xs rounded bg-inner bg-hover">1D</button>
+                </div>
+            </div>
+
+            <!-- Trade Panel -->
+            <div class="lg:col-span-1 bg-card rounded-2xl p-4 glow border border-themed">
+                <div class="flex mb-4 border-b border-themed">
+                    <button id="buyTab" onclick="setTradeType('buy')" class="flex-1 py-2 text-center font-bold tab-active">Buy</button>
+                    <button id="sellTab" onclick="setTradeType('sell')" class="flex-1 py-2 text-center font-bold tab-inactive">Sell</button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs text-muted mb-1 block">Available Balance</label>
+                        <p id="tradeBalance" class="font-bold text-lg">$50.00</p>
+                    </div>
+                    
+                    <!-- Buy Mode: USD Input -->
+                    <div id="buyInputSection">
+                        <label class="text-xs text-muted mb-1 block">Amount (USD)</label>
+                        <div class="relative">
+                            <input type="number" id="tradeAmountBuy" placeholder="0.00" class="w-full rounded-lg px-4 py-3 outline-none text-lg font-semibold">
+                            <button onclick="setMaxAmount()" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-hover px-2 py-1 rounded">MAX</button>
+                        </div>
+                    </div>
+
+                    <!-- Sell Mode: Currency Input -->
+                    <div id="sellInputSection" class="hidden">
+                        <label class="text-xs text-muted mb-1 block">Amount (<span id="sellCurrencyLabel">BTC</span>)</label>
+                        <div class="relative">
+                            <input type="number" id="tradeAmountSell" placeholder="0.0000" step="any" class="w-full rounded-lg px-4 py-3 outline-none text-lg font-semibold">
+                            <button onclick="setMaxAmount()" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-hover px-2 py-1 rounded">MAX</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs text-muted mb-1 block">You will receive</label>
+                        <p id="receiveAmount" class="font-bold text-2xl">0.0000 <span id="receiveSymbol">BTC</span></p>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="setPercentage(25)" class="bg-inner rounded py-2 text-xs font-semibold bg-hover">25%</button>
+                        <button onclick="setPercentage(50)" class="bg-inner rounded py-2 text-xs font-semibold bg-hover">50%</button>
+                        <button onclick="setPercentage(75)" class="bg-inner rounded py-2 text-xs font-semibold bg-hover">75%</button>
+                        <button onclick="setPercentage(100)" class="bg-inner rounded py-2 text-xs font-semibold bg-hover">100%</button>
+                    </div>
+
+                    <button id="tradeBtn" onclick="executeTrade()" class="w-full btn-buy py-4 rounded-xl font-bold text-lg">
+                        Buy BTC
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Auto Orders Section -->
+        <section id="orders-section" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Create Order -->
+                <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                    <h3 class="font-bold text-xl mb-6">Create Auto Order</h3>
+                    <p class="text-muted text-sm mb-6">Set automatic buy/sell orders that execute when the price reaches your target. <span class="text-green-500 font-semibold">Orders work even when offline!</span></p>
+                    
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs text-muted mb-1 block">Order Type</label>
+                                <select id="orderType" class="w-full rounded-lg px-4 py-3 outline-none">
+                                    <option value="buy">Buy (when price drops to)</option>
+                                    <option value="sell">Sell (when price rises to)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-muted mb-1 block">Market Type</label>
+                                <select id="orderMarketType" class="w-full rounded-lg px-4 py-3 outline-none" onchange="updateOrderCurrencyOptions()">
+                                    <option value="crypto">Crypto</option>
+                                    <option value="stocks">Stocks</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs text-muted mb-1 block">Asset</label>
+                            <select id="orderCurrency" class="w-full rounded-lg px-4 py-3 outline-none" onchange="updateOrderInfo()">
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs text-muted mb-1 block">Current Price</label>
+                                <p id="orderCurrentPrice" class="font-bold text-xl">$0.00</p>
+                            </div>
+                            <div id="avgPriceSection" class="hidden">
+                                <label class="text-xs text-muted mb-1 block">Your Avg. Buy Price</label>
+                                <p id="orderAvgPrice" class="font-bold text-xl">$0.00</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs text-muted mb-1 block">Target Price (USD)</label>
+                            <input type="number" id="orderTargetPrice" placeholder="0.00" step="0.01" class="w-full rounded-lg px-4 py-3 outline-none text-lg font-semibold">
+                            <p class="text-xs text-muted mt-1">Order triggers when price reaches this value</p>
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs text-muted mb-1 block">Amount (<span id="orderAmountLabel">units</span>)</label>
+                            <input type="number" id="orderAmount" placeholder="0.0000" step="any" class="w-full rounded-lg px-4 py-3 outline-none text-lg font-semibold">
+                            <p id="orderAmountHint" class="text-xs text-muted mt-1">Cash available: $50.00</p>
+                        </div>
+
+                        <div class="bg-inner rounded-lg p-4">
+                            <p class="text-sm text-muted mb-2">Order Summary</p>
+                            <p id="orderSummary" class="font-semibold">--</p>
+                            <div id="profitPreview" class="mt-2 pt-2 border-t border-themed hidden">
+                                <p class="text-sm text-muted">Estimated Profit/Loss:</p>
+                                <p id="profitPreviewAmount" class="font-bold text-lg text-green-500">+$0.00 (+0.00%)</p>
+                            </div>
+                        </div>
+                        
+                        <button onclick="createOrder()" class="w-full btn-primary py-4 rounded-xl font-bold text-lg">
+                            Create Auto Order
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Orders -->
+                <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                    <h3 class="font-bold text-xl mb-6">Active Orders</h3>
+                    <div id="activeOrders" class="space-y-3 max-h-[500px] overflow-y-auto">
+                        <p class="text-muted text-center py-8">No active orders</p>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-themed">
+                        <h4 class="font-bold mb-4">Order History</h4>
+                        <div id="orderHistory" class="space-y-2 max-h-40 overflow-y-auto">
+                            <p class="text-muted text-sm">No executed orders yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Wallet Section -->
+        <section id="wallet-section" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                    <p class="text-muted text-sm mb-1">Total Balance (USD)</p>
+                    <p id="totalBalance" class="text-3xl font-black">$50.00</p>
+                </div>
+                <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                    <p class="text-muted text-sm mb-1">Cash Balance</p>
+                    <p id="cashBalance" class="text-3xl font-black">$50.00</p>
+                </div>
+                <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                    <p class="text-muted text-sm mb-1">Portfolio Value</p>
+                    <p id="portfolioValue" class="text-3xl font-black">$0.00</p>
+                </div>
+                <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                    <p class="text-muted text-sm mb-1">Total P&L</p>
+                    <p id="totalPnL" class="text-3xl font-black text-green-500">+$0.00</p>
+                </div>
+            </div>
+
+            <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                <h3 class="font-bold text-xl mb-4">Your Assets</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-muted text-sm">
+                                <th class="text-left pb-4">Asset</th>
+                                <th class="text-right pb-4">Holdings</th>
+                                <th class="text-right pb-4">Avg. Price</th>
+                                <th class="text-right pb-4">Current Price</th>
+                                <th class="text-right pb-4">Value</th>
+                                <th class="text-right pb-4">P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assetsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bank Section -->
+        <section id="bank-section" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                    <h3 class="font-bold text-xl mb-6">Bank Account</h3>
+                    <div class="bg-inner rounded-2xl p-6 border border-themed mb-6">
+                        <p class="text-muted text-sm mb-1">Bank Balance</p>
+                        <p id="bankBalance" class="text-4xl font-black">$0.00</p>
+                        <div class="mt-4 pt-4 border-t border-themed">
+                            <p class="text-xs text-muted">Account Holder</p>
+                            <p class="font-semibold">Finance User</p>
+                            <p class="text-xs text-muted mt-2">Account ID</p>
+                            <p id="bankAccountId" class="font-mono text-sm"></p>
+                        </div>
+                    </div>
+
+                    <h4 class="font-bold mb-4">Withdraw to Bank</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs text-muted mb-1 block">Select Asset</label>
+                            <select id="withdrawCurrency" class="w-full rounded-lg px-4 py-3 outline-none">
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-muted mb-1 block">Amount (<span id="withdrawCurrencySymbol">BTC</span>)</label>
+                            <input type="number" id="withdrawAmount" placeholder="0.0000" step="any" class="w-full rounded-lg px-4 py-3 outline-none">
+                            <p id="withdrawAvailable" class="text-xs text-muted mt-1">Available: 0.0000</p>
+                        </div>
+                        
+                        <div class="bg-inner rounded-lg p-4 space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-muted">Subtotal</span>
+                                <span id="withdrawSubtotal">$0.00</span>
+                            </div>
+                            <div class="flex justify-between text-sm text-red-400">
+                                <span>Fees (3%)</span>
+                                <span id="withdrawFees">-$0.00</span>
+                            </div>
+                            <div class="flex justify-between text-sm text-red-400">
+                                <span>Taxes (6%)</span>
+                                <span id="withdrawTaxes">-$0.00</span>
+                            </div>
+                            <div class="flex justify-between font-bold pt-2 border-t border-themed">
+                                <span>You receive</span>
+                                <span id="withdrawTotal" class="text-green-500">$0.00</span>
+                            </div>
+                        </div>
+                        
+                        <button onclick="withdrawToBank()" class="w-full btn-primary py-4 rounded-xl font-bold">
+                            Withdraw to Bank
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                    <h3 class="font-bold text-xl mb-6">Transaction History</h3>
+                    <div id="transactionHistory" class="space-y-3 max-h-[500px] overflow-y-auto">
+                        <p class="text-muted text-center py-8">No transactions yet</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings-section" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                    <h3 class="font-bold text-xl mb-6">Account Settings</h3>
+                    
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between p-4 bg-inner rounded-xl">
+                            <div>
+                                <p class="font-bold">User ID</p>
+                                <p id="settingsUserId" class="text-muted text-sm font-mono"></p>
+                            </div>
+                            <span class="text-2xl">🆔</span>
+                        </div>
+
+                        <div class="flex items-center justify-between p-4 bg-inner rounded-xl">
+                            <div>
+                                <p class="font-bold">Theme</p>
+                                <p id="themeModeLabel" class="text-muted text-sm">Dark Mode</p>
+                            </div>
+                            <div id="themeToggle" class="toggle-switch" onclick="toggleTheme()"></div>
+                        </div>
+
+                        <div class="p-4 bg-inner rounded-xl">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <p class="font-bold">Reset Progress</p>
+                                    <p class="text-muted text-sm">Delete all data and start fresh</p>
+                                </div>
+                                <span class="text-2xl">⚠️</span>
+                            </div>
+                            <button onclick="confirmReset()" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition">
+                                Reset All Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card rounded-2xl p-6 glow border border-themed">
+                    <h3 class="font-bold text-xl mb-6">Rank System</h3>
+                    
+                    <div class="bg-inner rounded-2xl p-6 mb-6 text-center">
+                        <p class="text-muted text-sm mb-2">Current Rank</p>
+                        <p id="currentRank" class="text-6xl font-black">#0</p>
+                    </div>
+
+                    <div class="bg-inner rounded-xl p-4 mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-muted">Next Rank</span>
+                            <span id="nextRank" class="font-bold">#1</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-muted">Cost</span>
+                            <span id="rankCost" class="font-bold">$40.00</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-muted">Your Cash</span>
+                            <span id="settingsCashBalance" class="font-bold">$50.00</span>
+                        </div>
+                    </div>
+
+                    <button id="buyRankBtn" onclick="buyRank()" class="w-full btn-primary py-4 rounded-xl font-bold mb-6">
+                        Buy Rank #1
+                    </button>
+
+                    <div>
+                        <h4 class="font-bold mb-3">Rank History</h4>
+                        <div id="rankHistory" class="space-y-2 max-h-32 overflow-y-auto">
+                            <p class="text-muted text-sm">No ranks purchased yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Reset Confirmation Modal -->
+    <div id="resetModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card rounded-2xl p-6 max-w-md mx-4 border border-themed">
+            <h3 class="font-bold text-xl mb-4">⚠️ Reset Progress?</h3>
+            <p class="text-muted mb-6">This will delete all your data including balances, holdings, orders, and rank. You will start fresh with $50.00. This action cannot be undone!</p>
+            <div class="flex gap-3">
+                <button onclick="closeResetModal()" class="flex-1 bg-inner py-3 rounded-xl font-bold bg-hover">Cancel</button>
+                <button onclick="resetProgress()" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card border border-themed px-6 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <p id="toastMessage" class="font-semibold"></p>
+    </div>
+
+    <script>
+        // Crypto currencies
+        const cryptos = {
+            btc: { symbol: 'BTC', name: 'Bitcoin', price: 62450.00, change: 0, type: 'crypto' },
+            eth: { symbol: 'ETH', name: 'Ethereum', price: 3420.50, change: 0, type: 'crypto' },
+            sol: { symbol: 'SOL', name: 'Solana', price: 148.75, change: 0, type: 'crypto' },
+            bnb: { symbol: 'BNB', name: 'BNB', price: 585.20, change: 0, type: 'crypto' },
+            xrp: { symbol: 'XRP', name: 'Ripple', price: 0.52, change: 0, type: 'crypto' },
+            ada: { symbol: 'ADA', name: 'Cardano', price: 0.45, change: 0, type: 'crypto' },
+            doge: { symbol: 'DOGE', name: 'Dogecoin', price: 0.085, change: 0, type: 'crypto' },
+            dot: { symbol: 'DOT', name: 'Polkadot', price: 7.25, change: 0, type: 'crypto' },
+            link: { symbol: 'LINK', name: 'Chainlink', price: 14.80, change: 0, type: 'crypto' }
+        };
+
+        // Stocks
+        const stocks = {
+            msft: { symbol: 'PPT', name: 'PowerPoint', price: 425.60, change: 0, type: 'stock', logo: 'https://i.imgur.com/c2eYtHU.png' },
+            tsla: { symbol: 'TSLA', name: 'Tesla', price: 248.50, change: 0, type: 'stock', logo: 'https://i.imgur.com/XIp5EdA.png' },
+            aapl: { symbol: 'AAPL', name: 'Apple', price: 178.25, change: 0, type: 'stock', logo: 'https://i.imgur.com/5yOfjid.png' },
+            nvda: { symbol: 'NVDA', name: 'Nvidia', price: 875.40, change: 0, type: 'stock', logo: 'https://i.imgur.com/k4Ggh5W.png' }
+        };
+
+        // Combined markets
+        let markets = { ...cryptos, ...stocks };
+
+        // Base prices for reset
+        const basePrices = {};
+        Object.keys(markets).forEach(key => {
+            basePrices[key] = markets[key].price;
+        });
+
+        // Price history with multiple timeframes
+        const priceHistory = {};
+        const timeframeData = {}; // Store aggregated data per timeframe
+        
+        // Timeframe configurations (in seconds)
+        const timeframes = {
+            '5s': { interval: 5, points: 60, label: '5 seconds' },
+            '1m': { interval: 60, points: 60, label: '1 minute' },
+            '5m': { interval: 300, points: 60, label: '5 minutes' },
+            '15m': { interval: 900, points: 60, label: '15 minutes' },
+            '1h': { interval: 3600, points: 60, label: '1 hour' },
+            '4h': { interval: 14400, points: 60, label: '4 hours' },
+            '1d': { interval: 86400, points: 60, label: '1 day' }
+        };
+        
+        let currentTimeframe = '15m';
+        let tickCounter = 0;
+        
+        function initPriceHistory() {
+            Object.keys(markets).forEach(key => {
+                priceHistory[key] = [markets[key].price];
+                timeframeData[key] = {};
+                
+                // Initialize all timeframes with historical data
+                Object.keys(timeframes).forEach(tf => {
+                    timeframeData[key][tf] = [];
+                    let price = markets[key].price;
+                    const volatility = getVolatility(key);
+                    
+                    // Generate historical data points
+                    for (let i = 0; i < timeframes[tf].points; i++) {
+                        // More variance for longer timeframes
+                        const tfMultiplier = Math.sqrt(timeframes[tf].interval / 5);
+                        const change = (Math.random() - 0.5) * volatility * tfMultiplier;
+                        price = Math.max(price * 0.5, price + change);
+                        timeframeData[key][tf].unshift(roundTo(price, price < 1 ? 6 : 2));
+                    }
+                });
+            });
+        }
+
+        // Get volatility based on asset price (higher volatility for better profits)
+        function getVolatility(key) {
+            const price = markets[key].price;
+            if (price > 10000) return price * 0.015; // 1.5% for BTC level
+            if (price > 1000) return price * 0.02;   // 2% for ETH level
+            if (price > 100) return price * 0.025;   // 2.5% for SOL/stocks level
+            if (price > 10) return price * 0.03;     // 3% for mid-range
+            if (price > 1) return price * 0.04;      // 4% for low price
+            return price * 0.05;                      // 5% for very low price (XRP, ADA, DOGE)
+        }
+
+        // Default state
+        const defaultState = {
+            cashBalance: 50.00,
+            bankBalance: 0,
+            holdings: {},
+            transactions: [],
+            userId: '',
+            selectedCurrency: 'btc',
+            marketType: 'crypto',
+            tradeType: 'buy',
+            autoOrders: [],
+            orderHistory: [],
+            darkMode: true,
+            rank: 0,
+            rankHistory: [],
+            lastPriceUpdate: Date.now()
+        };
+
+        // Initialize holdings for all markets
+        Object.keys(markets).forEach(key => {
+            defaultState.holdings[key] = { amount: 0, avgPrice: 0 };
+        });
+
+        let state = { ...defaultState };
+
+        // Generate user ID
+        function generateUserId() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let id = 'FIN-';
+            for (let i = 0; i < 8; i++) {
+                id += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return id;
+        }
+
+        // Round to precision (fix floating point issues)
+        function roundTo(num, decimals) {
+            const factor = Math.pow(10, decimals);
+            return Math.round(num * factor) / factor;
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            const saveData = {
+                ...state,
+                prices: {},
+                timeframeData: timeframeData,
+                lastPriceUpdate: Date.now()
+            };
+            Object.keys(markets).forEach(key => {
+                saveData.prices[key] = markets[key].price;
+            });
+            localStorage.setItem('financeAppState', JSON.stringify(saveData));
+        }
+
+        // Load state from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('financeAppState');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state = { ...defaultState, ...parsed };
+                
+                // Ensure all market holdings exist
+                Object.keys(markets).forEach(key => {
+                    if (!state.holdings[key]) {
+                        state.holdings[key] = { amount: 0, avgPrice: 0 };
+                    }
+                });
+                
+                // Restore prices
+                if (parsed.prices) {
+                    Object.keys(parsed.prices).forEach(key => {
+                        if (markets[key]) {
+                            markets[key].price = parsed.prices[key];
+                        }
+                    });
+                }
+                
+                // Restore timeframe data
+                if (parsed.timeframeData) {
+                    Object.keys(parsed.timeframeData).forEach(key => {
+                        if (timeframeData[key]) {
+                            timeframeData[key] = parsed.timeframeData[key];
+                        }
+                    });
+                }
+                
+                // Simulate offline price changes AND execute auto orders
+                if (parsed.lastPriceUpdate) {
+                    const elapsed = Date.now() - parsed.lastPriceUpdate;
+                    const updates = Math.min(Math.floor(elapsed / 1500), 1000);
+                    
+                    if (updates > 0) {
+                        let ordersExecuted = 0;
+                        for (let i = 0; i < updates; i++) {
+                            // Update prices
+                            Object.keys(markets).forEach(key => {
+                                const market = markets[key];
+                                const volatility = getVolatility(key);
+                                const trend = (Math.random() - 0.48); // Slight upward bias
+                                const change = trend * volatility;
+                                market.price = roundTo(Math.max(market.price * 0.1, market.price + change), market.price < 1 ? 6 : 2);
+                                
+                                // Update timeframe data
+                                updateTimeframeData(key, market.price);
+                            });
+                            
+                            // Check and execute auto orders during offline simulation
+                            ordersExecuted += checkAutoOrdersOffline();
+                        }
+                        
+                        // Recalculate changes
+                        Object.keys(markets).forEach(key => {
+                            const basePrice = basePrices[key];
+                            markets[key].change = ((markets[key].price - basePrice) / basePrice) * 100;
+                        });
+                        
+                        let message = `⏰ ${updates} price changes occurred while you were away!`;
+                        if (ordersExecuted > 0) {
+                            message += ` 📈 ${ordersExecuted} auto orders executed!`;
+                        }
+                        setTimeout(() => showToast(message), 500);
+                    }
+                }
+                
+                applyTheme();
+            } else {
+                state.userId = generateUserId();
+                saveState();
+            }
+        }
+
+        // Update timeframe data with new price
+        function updateTimeframeData(key, price) {
+            tickCounter++;
+            
+            Object.keys(timeframes).forEach(tf => {
+                const config = timeframes[tf];
+                // 5s timeframe updates every tick (1.5s), others aggregate
+                const ticksPerCandle = Math.max(1, Math.floor(config.interval / 1.5));
+                
+                if (!timeframeData[key]) timeframeData[key] = {};
+                if (!timeframeData[key][tf]) timeframeData[key][tf] = [];
+                
+                if (tf === '5s' || tickCounter % ticksPerCandle === 0) {
+                    timeframeData[key][tf].push(roundTo(price, price < 1 ? 6 : 2));
+                    if (timeframeData[key][tf].length > config.points) {
+                        timeframeData[key][tf].shift();
+                    }
+                }
+            });
+        }
+
+        // Check auto orders during offline simulation (returns count of executed)
+        function checkAutoOrdersOffline() {
+            let executed = 0;
+            const ordersToRemove = [];
+            
+            state.autoOrders.forEach((order, index) => {
+                const market = markets[order.currency];
+                if (!market) return;
+                
+                const currentPrice = market.price;
+                let shouldExecute = false;
+                
+                if (order.type === 'buy' && currentPrice <= order.targetPrice) {
+                    const cost = roundTo(order.amount * currentPrice, 2);
+                    if (cost <= state.cashBalance) {
+                        state.cashBalance = roundTo(state.cashBalance - cost, 2);
+                        const holding = state.holdings[order.currency];
+                        const newAmount = roundTo(holding.amount + order.amount, 8);
+                        holding.avgPrice = roundTo(((holding.amount * holding.avgPrice) + cost) / newAmount, 2);
+                        holding.amount = newAmount;
+                        shouldExecute = true;
+                    }
+                } else if (order.type === 'sell' && currentPrice >= order.targetPrice) {
+                    const holding = state.holdings[order.currency];
+                    if (holding.amount >= order.amount) {
+                        const revenue = roundTo(order.amount * currentPrice, 2);
+                        state.cashBalance = roundTo(state.cashBalance + revenue, 2);
+                        holding.amount = roundTo(holding.amount - order.amount, 8);
+                        
+                        if (holding.amount < 0.00000001) {
+                            holding.amount = 0;
+                            holding.avgPrice = 0;
+                        }
+                        shouldExecute = true;
+                    }
+                }
+                
+                if (shouldExecute) {
+                    ordersToRemove.push(index);
+                    executed++;
+                    
+                    // Calculate profit for sell orders
+                    let profit = 0;
+                    let profitPercent = 0;
+                    if (order.type === 'sell' && order.entryPrice) {
+                        profit = roundTo((currentPrice - order.entryPrice) * order.amount, 2);
+                        profitPercent = roundTo(((currentPrice - order.entryPrice) / order.entryPrice) * 100, 2);
+                    }
+                    
+                    state.orderHistory.unshift({
+                        ...order,
+                        executedAt: currentPrice,
+                        executedDate: new Date(),
+                        profit: profit,
+                        profitPercent: profitPercent
+                    });
+                }
+            });
+            
+            ordersToRemove.reverse().forEach(index => {
+                state.autoOrders.splice(index, 1);
+            });
+            
+            return executed;
+        }
+
+        // Update prices with higher volatility for better trading
+        function updatePrices() {
+            Object.keys(markets).forEach(key => {
+                const market = markets[key];
+                const oldPrice = market.price;
+                const volatility = getVolatility(key);
+                
+                // Add momentum/trend factor for more predictable swings
+                const momentum = Math.random() > 0.5 ? 1 : -1;
+                const magnitude = Math.random();
+                const change = momentum * magnitude * volatility;
+                
+                market.price = roundTo(Math.max(market.price * 0.1, market.price + change), market.price < 1 ? 6 : 2);
+                
+                // Update change percentage from base
+                const basePrice = basePrices[key];
+                market.change = roundTo(((market.price - basePrice) / basePrice) * 100, 2);
+                
+                // Update timeframe data
+                updateTimeframeData(key, market.price);
+            });
+            
+            // Check auto orders
+            checkAutoOrders();
+            
+            // Redraw chart and update UI
+            drawChart();
+            updateUI();
+            saveState();
+        }
+
+        // Check and execute auto orders
+        function checkAutoOrders() {
+            const ordersToRemove = [];
+            
+            state.autoOrders.forEach((order, index) => {
+                const market = markets[order.currency];
+                if (!market) return;
+                
+                const currentPrice = market.price;
+                let shouldExecute = false;
+                
+                if (order.type === 'buy' && currentPrice <= order.targetPrice) {
+                    const cost = roundTo(order.amount * currentPrice, 2);
+                    if (cost <= state.cashBalance) {
+                        state.cashBalance = roundTo(state.cashBalance - cost, 2);
+                        const holding = state.holdings[order.currency];
+                        const newAmount = roundTo(holding.amount + order.amount, 8);
+                        holding.avgPrice = roundTo(((holding.amount * holding.avgPrice) + cost) / newAmount, 2);
+                        holding.amount = newAmount;
+                        
+                        shouldExecute = true;
+                        showToast(`✅ Auto Buy executed: ${order.amount} ${market.symbol} @ $${currentPrice.toFixed(2)}`);
+                    }
+                } else if (order.type === 'sell' && currentPrice >= order.targetPrice) {
+                    const holding = state.holdings[order.currency];
+                    if (holding.amount >= order.amount) {
+                        const revenue = roundTo(order.amount * currentPrice, 2);
+                        state.cashBalance = roundTo(state.cashBalance + revenue, 2);
+                        holding.amount = roundTo(holding.amount - order.amount, 8);
+                        
+                        if (holding.amount < 0.00000001) {
+                            holding.amount = 0;
+                            holding.avgPrice = 0;
+                        }
+                        
+                        shouldExecute = true;
+                        
+                        // Calculate profit
+                        let profitMsg = '';
+                        if (order.entryPrice) {
+                            const profit = roundTo((currentPrice - order.entryPrice) * order.amount, 2);
+                            profitMsg = profit >= 0 ? ` (+$${profit.toFixed(2)} profit!)` : ` (-$${Math.abs(profit).toFixed(2)} loss)`;
+                        }
+                        
+                        showToast(`✅ Auto Sell executed: ${order.amount} ${market.symbol} @ $${currentPrice.toFixed(2)}${profitMsg}`);
+                    }
+                }
+                
+                if (shouldExecute) {
+                    ordersToRemove.push(index);
+                    
+                    // Calculate profit for sell orders
+                    let profit = 0;
+                    let profitPercent = 0;
+                    if (order.type === 'sell' && order.entryPrice) {
+                        profit = roundTo((currentPrice - order.entryPrice) * order.amount, 2);
+                        profitPercent = roundTo(((currentPrice - order.entryPrice) / order.entryPrice) * 100, 2);
+                    }
+                    
+                    state.orderHistory.unshift({
+                        ...order,
+                        executedAt: currentPrice,
+                        executedDate: new Date(),
+                        profit: profit,
+                        profitPercent: profitPercent
+                    });
+                }
+            });
+            
+            ordersToRemove.reverse().forEach(index => {
+                state.autoOrders.splice(index, 1);
+            });
+            
+            if (ordersToRemove.length > 0) {
+                saveState();
+                updateOrdersUI();
+            }
+        }
+
+        // Calculate rank cost
+        function calculateRankCost(currentRank) {
+            let cost = 40;
+            for (let i = 0; i < currentRank; i++) {
+                cost *= 1.08;
+            }
+            return roundTo(cost, 2);
+        }
+
+        // Draw chart with current timeframe data
+        function drawChart() {
+            const canvas = document.getElementById('priceChart');
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const key = state.selectedCurrency;
+            const data = timeframeData[key] && timeframeData[key][currentTimeframe] 
+                ? timeframeData[key][currentTimeframe] 
+                : [markets[key].price];
+            
+            if (!data || data.length === 0) return;
+            
+            const padding = 20;
+            const chartWidth = canvas.width - padding * 2;
+            const chartHeight = canvas.height - padding * 2;
+            
+            const min = Math.min(...data) * 0.995;
+            const max = Math.max(...data) * 1.005;
+            const range = max - min || 1;
+            
+            const isUp = data[data.length - 1] >= data[0];
+            const lineColor = isUp ? '#22c55e' : '#ef4444';
+            const fillColor = isUp ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+            
+            // Draw gradient fill
+            ctx.beginPath();
+            ctx.moveTo(padding, chartHeight + padding);
+            
+            data.forEach((price, i) => {
+                const x = padding + (i / (data.length - 1 || 1)) * chartWidth;
+                const y = padding + chartHeight - ((price - min) / range) * chartHeight;
+                if (i === 0) ctx.lineTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            
+            ctx.lineTo(padding + chartWidth, chartHeight + padding);
+            ctx.closePath();
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            
+            // Draw line
+            ctx.beginPath();
+            data.forEach((price, i) => {
+                const x = padding + (i / (data.length - 1 || 1)) * chartWidth;
+                const y = padding + chartHeight - ((price - min) / range) * chartHeight;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw current price dot
+            const lastX = padding + chartWidth;
+            const lastY = padding + chartHeight - ((data[data.length - 1] - min) / range) * chartHeight;
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = lineColor;
+            ctx.fill();
+            
+            // Draw price labels
+            ctx.fillStyle = state.darkMode ? '#737373' : '#525252';
+            ctx.font = '10px Inter';
+            ctx.textAlign = 'right';
+            
+            const formatPrice = (p) => p < 1 ? p.toFixed(4) : p.toFixed(2);
+            ctx.fillText('$' + formatPrice(max), padding - 5, padding + 10);
+            ctx.fillText('$' + formatPrice(min), padding - 5, chartHeight + padding);
+            
+            // Draw timeframe label
+            ctx.fillStyle = state.darkMode ? '#525252' : '#737373';
+            ctx.textAlign = 'left';
+            ctx.fillText(timeframes[currentTimeframe].label + ' intervals', padding, canvas.height - 5);
+        }
+
+        // Get current markets based on type
+        function getCurrentMarkets() {
+            if (state.marketType === 'crypto') return cryptos;
+            return stocks;
+        }
+
+        // Set market type
+        function setMarketType(type) {
+            state.marketType = type;
+            
+            document.getElementById('cryptoTab').classList.toggle('active', type === 'crypto');
+            document.getElementById('stocksTab').classList.toggle('active', type === 'stocks');
+            document.getElementById('cryptoTab').classList.toggle('bg-inner', type !== 'crypto');
+            document.getElementById('stocksTab').classList.toggle('bg-inner', type !== 'stocks');
+            
+            const currentMarkets = getCurrentMarkets();
+            const firstKey = Object.keys(currentMarkets)[0];
+            state.selectedCurrency = firstKey;
+            
+            saveState();
+            updateUI();
+        }
+
+        // Set timeframe
+        function setTimeframe(tf) {
+            currentTimeframe = tf;
+            
+            document.querySelectorAll('.timeframe-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            drawChart();
+        }
+
+        // Update UI
+        function updateUI() {
+            updateMarketList();
+            updateChart();
+            updateTradePanel();
+            updateWallet();
+            updateBank();
+            updateSettings();
+            updateOrderInfo();
+        }
+
+        // Update market list
+        function updateMarketList() {
+            const container = document.getElementById('marketList');
+            container.innerHTML = '';
+            
+            const currentMarkets = getCurrentMarkets();
+            
+            Object.entries(currentMarkets).forEach(([key, market]) => {
+                const isSelected = key === state.selectedCurrency;
+                const changeClass = market.change >= 0 ? 'text-green-500' : 'text-red-500';
+                const changeSign = market.change >= 0 ? '+' : '';
+                
+                const symbolDisplay = market.logo 
+                    ? `<img src="${market.logo}" class="stock-logo" alt="${market.name}">`
+                    : `<span class="currency-symbol text-2xl">${market.symbol}</span>`;
+                
+                container.innerHTML += `
+                    <div onclick="selectCurrency('${key}')" 
+                         class="p-3 rounded-xl cursor-pointer transition-all ${isSelected ? 'bg-inner border-2 border-white/20' : 'bg-inner bg-hover'}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                ${symbolDisplay}
+                                <div>
+                                    <p class="font-bold">${market.name}</p>
+                                    <p class="text-xs text-muted">${market.symbol}/USD</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">$${market.price < 1 ? market.price.toFixed(4) : market.price.toFixed(2)}</p>
+                                <p class="text-xs ${changeClass}">${changeSign}${market.change.toFixed(2)}%</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Update chart display
+        function updateChart() {
+            const market = markets[state.selectedCurrency];
+            const changeClass = market.change >= 0 ? 'text-green-500' : 'text-red-500';
+            const changeSign = market.change >= 0 ? '+' : '';
+            
+            const symbolDisplay = market.logo 
+                ? `<img src="${market.logo}" class="stock-logo" style="width:48px;height:48px;" alt="${market.name}">`
+                : market.symbol;
+            
+            document.getElementById('chartSymbol').innerHTML = symbolDisplay;
+            document.getElementById('chartName').textContent = market.name;
+            document.getElementById('chartPair').textContent = `${market.symbol}/USD`;
+            document.getElementById('chartPrice').textContent = `$${market.price < 1 ? market.price.toFixed(4) : market.price.toFixed(2)}`;
+            document.getElementById('chartChange').textContent = `${changeSign}${market.change.toFixed(2)}%`;
+            document.getElementById('chartChange').className = `${changeClass} text-sm font-semibold`;
+            
+            drawChart();
+        }
+
+        // Update trade panel
+        function updateTradePanel() {
+            const market = markets[state.selectedCurrency];
+            const holding = state.holdings[state.selectedCurrency];
+            
+            if (state.tradeType === 'buy') {
+                document.getElementById('tradeBalance').textContent = `$${state.cashBalance.toFixed(2)}`;
+                document.getElementById('buyInputSection').classList.remove('hidden');
+                document.getElementById('sellInputSection').classList.add('hidden');
+                document.getElementById('tradeBtn').className = 'w-full btn-buy py-4 rounded-xl font-bold text-lg';
+                document.getElementById('tradeBtn').textContent = `Buy ${market.symbol}`;
+            } else {
+                document.getElementById('tradeBalance').textContent = `${holding.amount.toFixed(8)} ${market.symbol}`;
+                document.getElementById('buyInputSection').classList.add('hidden');
+                document.getElementById('sellInputSection').classList.remove('hidden');
+                document.getElementById('sellCurrencyLabel').textContent = market.symbol;
+                document.getElementById('tradeBtn').className = 'w-full btn-sell py-4 rounded-xl font-bold text-lg';
+                document.getElementById('tradeBtn').textContent = `Sell ${market.symbol}`;
+            }
+            
+            calculateReceiveAmount();
+        }
+
+        // Update wallet section
+        function updateWallet() {
+            let portfolioValue = 0;
+            let totalCost = 0;
+            
+            Object.keys(markets).forEach(key => {
+                const market = markets[key];
+                const holding = state.holdings[key];
+                if (holding) {
+                    portfolioValue += holding.amount * market.price;
+                    totalCost += holding.amount * holding.avgPrice;
+                }
+            });
+            
+            const totalBalance = state.cashBalance + portfolioValue;
+            const totalPnL = portfolioValue - totalCost;
+            const pnlClass = totalPnL >= 0 ? 'text-green-500' : 'text-red-500';
+            const pnlSign = totalPnL >= 0 ? '+' : '';
+            
+            document.getElementById('totalBalance').textContent = `$${totalBalance.toFixed(2)}`;
+            document.getElementById('cashBalance').textContent = `$${state.cashBalance.toFixed(2)}`;
+            document.getElementById('portfolioValue').textContent = `$${portfolioValue.toFixed(2)}`;
+            document.getElementById('totalPnL').textContent = `${pnlSign}$${totalPnL.toFixed(2)}`;
+            document.getElementById('totalPnL').className = `text-3xl font-black ${pnlClass}`;
+            
+            // Update assets table
+            const container = document.getElementById('assetsTable');
+            container.innerHTML = '';
+            
+            Object.keys(markets).forEach(key => {
+                const market = markets[key];
+                const holding = state.holdings[key];
+                
+                if (holding && holding.amount > 0.00000001) {
+                    const value = holding.amount * market.price;
+                    const cost = holding.amount * holding.avgPrice;
+                    const pnl = value - cost;
+                    const pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0;
+                    const pnlClass = pnl >= 0 ? 'text-green-500' : 'text-red-500';
+                    const pnlSign = pnl >= 0 ? '+' : '';
+                    
+                    const symbolDisplay = market.logo 
+                        ? `<img src="${market.logo}" class="stock-logo" alt="${market.name}">`
+                        : `<span class="currency-symbol text-2xl">${market.symbol}</span>`;
+                    
+                    container.innerHTML += `
+                        <tr class="border-t border-themed">
+                            <td class="py-4">
+                                <div class="flex items-center gap-3">
+                                    ${symbolDisplay}
+                                    <span class="font-bold">${market.name}</span>
+                                </div>
+                            </td>
+                            <td class="text-right py-4 font-semibold">${holding.amount.toFixed(8)}</td>
+                            <td class="text-right py-4 text-muted">$${holding.avgPrice.toFixed(2)}</td>
+                            <td class="text-right py-4">$${market.price < 1 ? market.price.toFixed(4) : market.price.toFixed(2)}</td>
+                            <td class="text-right py-4 font-semibold">$${value.toFixed(2)}</td>
+                            <td class="text-right py-4 ${pnlClass} font-semibold">${pnlSign}$${pnl.toFixed(2)} (${pnlSign}${pnlPercent.toFixed(2)}%)</td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            if (container.innerHTML === '') {
+                container.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-muted">No assets in portfolio</td></tr>';
+            }
+        }
+
+        // Update bank section
+        function updateBank() {
+            document.getElementById('bankBalance').textContent = `$${state.bankBalance.toFixed(2)}`;
+            document.getElementById('bankAccountId').textContent = state.userId;
+            
+            // Update withdraw currency options
+            const select = document.getElementById('withdrawCurrency');
+            select.innerHTML = '';
+            
+            Object.keys(markets).forEach(key => {
+                const market = markets[key];
+                const holding = state.holdings[key];
+                if (holding && holding.amount > 0.00000001) {
+                    select.innerHTML += `<option value="${key}">${market.symbol} - ${market.name}</option>`;
+                }
+            });
+            
+            if (select.innerHTML === '') {
+                select.innerHTML = '<option value="">No assets to withdraw</option>';
+            }
+            
+            const currencyKey = select.value;
+            if (currencyKey && markets[currencyKey]) {
+                const market = markets[currencyKey];
+                const holding = state.holdings[currencyKey];
+                
+                document.getElementById('withdrawCurrencySymbol').textContent = market.symbol;
+                document.getElementById('withdrawAvailable').textContent = `Available: ${holding.amount.toFixed(8)} ${market.symbol}`;
+            }
+            
+            calculateWithdraw();
+        }
+
+        // Update settings section
+        function updateSettings() {
+            document.getElementById('settingsUserId').textContent = state.userId;
+            document.getElementById('currentRank').textContent = `#${state.rank}`;
+            document.getElementById('nextRank').textContent = `#${state.rank + 1}`;
+            
+            const nextRankCost = calculateRankCost(state.rank);
+            document.getElementById('rankCost').textContent = `$${nextRankCost.toFixed(2)}`;
+            document.getElementById('settingsCashBalance').textContent = `$${state.cashBalance.toFixed(2)}`;
+            document.getElementById('buyRankBtn').textContent = `Buy Rank #${state.rank + 1}`;
+            
+            // Update theme toggle
+            const toggle = document.getElementById('themeToggle');
+            const label = document.getElementById('themeModeLabel');
+            if (state.darkMode) {
+                toggle.classList.remove('active');
+                label.textContent = 'Dark Mode';
+            } else {
+                toggle.classList.add('active');
+                label.textContent = 'Light Mode';
+            }
+            
+            // Update rank history
+            const historyContainer = document.getElementById('rankHistory');
+            if (state.rankHistory.length === 0) {
+                historyContainer.innerHTML = '<p class="text-muted text-sm">No ranks purchased yet</p>';
+            } else {
+                historyContainer.innerHTML = state.rankHistory.map(rh => `
+                    <div class="bg-inner rounded-lg px-3 py-2 text-sm flex justify-between">
+                        <span>Rank #${rh.rank}</span>
+                        <span class="text-muted">$${rh.cost.toFixed(2)}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Update order currency options
+        function updateOrderCurrencyOptions() {
+            const marketType = document.getElementById('orderMarketType').value;
+            const select = document.getElementById('orderCurrency');
+            select.innerHTML = '';
+            
+            const targetMarkets = marketType === 'crypto' ? cryptos : stocks;
+            
+            Object.entries(targetMarkets).forEach(([key, market]) => {
+                select.innerHTML += `<option value="${key}">${market.symbol} - ${market.name}</option>`;
+            });
+            
+            updateOrderInfo();
+        }
+
+        // Update order info in Create Order panel
+        function updateOrderInfo() {
+            const currencyKey = document.getElementById('orderCurrency').value;
+            if (!currencyKey || !markets[currencyKey]) return;
+            
+            const market = markets[currencyKey];
+            const orderType = document.getElementById('orderType').value;
+            const holding = state.holdings[currencyKey];
+            
+            document.getElementById('orderCurrentPrice').textContent = `$${market.price < 1 ? market.price.toFixed(4) : market.price.toFixed(2)}`;
+            
+            // Show/hide avg price for sell orders
+            const avgPriceSection = document.getElementById('avgPriceSection');
+            if (orderType === 'sell' && holding && holding.amount > 0.00000001 && holding.avgPrice > 0) {
+                avgPriceSection.classList.remove('hidden');
+                document.getElementById('orderAvgPrice').textContent = `$${holding.avgPrice.toFixed(2)}`;
+            } else {
+                avgPriceSection.classList.add('hidden');
+            }
+            
+            if (orderType === 'buy') {
+                document.getElementById('orderAmountLabel').textContent = `${market.symbol} to buy`;
+                document.getElementById('orderAmountHint').textContent = `Cash available: $${state.cashBalance.toFixed(2)}`;
+            } else {
+                document.getElementById('orderAmountLabel').textContent = `${market.symbol} to sell`;
+                document.getElementById('orderAmountHint').textContent = `Holdings available: ${holding ? holding.amount.toFixed(8) : '0'} ${market.symbol}`;
+            }
+            
+            updateOrderSummary();
+        }
+
+        // Update order summary with profit preview
+        function updateOrderSummary() {
+            const currencyKey = document.getElementById('orderCurrency').value;
+            if (!currencyKey || !markets[currencyKey]) return;
+            
+            const market = markets[currencyKey];
+            const orderType = document.getElementById('orderType').value;
+            const targetPrice = parseFloat(document.getElementById('orderTargetPrice').value) || 0;
+            const amount = parseFloat(document.getElementById('orderAmount').value) || 0;
+            const holding = state.holdings[currencyKey];
+            
+            const profitPreview = document.getElementById('profitPreview');
+            const profitPreviewAmount = document.getElementById('profitPreviewAmount');
+            
+            if (targetPrice > 0 && amount > 0) {
+                const total = targetPrice * amount;
+                if (orderType === 'buy') {
+                    document.getElementById('orderSummary').textContent = 
+                        `Buy ${amount} ${market.symbol} when price drops to $${targetPrice.toFixed(2)} (≈$${total.toFixed(2)} total)`;
+                    profitPreview.classList.add('hidden');
+                } else {
+                    document.getElementById('orderSummary').textContent = 
+                        `Sell ${amount} ${market.symbol} when price rises to $${targetPrice.toFixed(2)} (≈$${total.toFixed(2)} total)`;
+                    
+                    // Show profit preview for sell orders
+                    if (holding && holding.avgPrice > 0) {
+                        const entryPrice = holding.avgPrice;
+                        const profit = roundTo((targetPrice - entryPrice) * amount, 2);
+                        const profitPercent = roundTo(((targetPrice - entryPrice) / entryPrice) * 100, 2);
+                        
+                        profitPreview.classList.remove('hidden');
+                        
+                        if (profit >= 0) {
+                            profitPreviewAmount.className = 'font-bold text-lg text-green-500';
+                            profitPreviewAmount.textContent = `+$${profit.toFixed(2)} (+${profitPercent.toFixed(2)}%)`;
+                        } else {
+                            profitPreviewAmount.className = 'font-bold text-lg text-red-500';
+                            profitPreviewAmount.textContent = `-$${Math.abs(profit).toFixed(2)} (${profitPercent.toFixed(2)}%)`;
+                        }
+                    } else {
+                        profitPreview.classList.add('hidden');
+                    }
+                }
+            } else {
+                document.getElementById('orderSummary').textContent = '--';
+                profitPreview.classList.add('hidden');
+            }
+        }
+
+        // Update orders UI
+        function updateOrdersUI() {
+            const activeContainer = document.getElementById('activeOrders');
+            const historyContainer = document.getElementById('orderHistory');
+            
+            // Active orders
+            if (state.autoOrders.length === 0) {
+                activeContainer.innerHTML = '<p class="text-muted text-center py-8">No active orders</p>';
+            } else {
+                activeContainer.innerHTML = state.autoOrders.map((order, index) => {
+                    const market = markets[order.currency];
+                    if (!market) return '';
+                    
+                    const currentPrice = market.price;
+                    const diff = order.type === 'buy' 
+                        ? ((currentPrice - order.targetPrice) / order.targetPrice * 100)
+                        : ((order.targetPrice - currentPrice) / currentPrice * 100);
+                    
+                    const symbolDisplay = market.logo 
+                        ? `<img src="${market.logo}" class="stock-logo" alt="${market.name}">`
+                        : `<span class="currency-symbol text-2xl">${market.symbol}</span>`;
+                    
+                    // Calculate estimated profit for sell orders
+                    let profitHtml = '';
+                    if (order.type === 'sell' && order.entryPrice) {
+                        const estProfit = roundTo((order.targetPrice - order.entryPrice) * order.amount, 2);
+                        const estProfitPercent = roundTo(((order.targetPrice - order.entryPrice) / order.entryPrice) * 100, 2);
+                        
+                        if (estProfit >= 0) {
+                            profitHtml = `
+                                <div class="mt-2 pt-2 border-t border-themed">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-muted text-xs">Entry Price:</span>
+                                        <span class="text-sm">$${order.entryPrice.toFixed(2)}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-1">
+                                        <span class="text-muted text-xs">Est. Profit:</span>
+                                        <span class="profit-badge profit-positive">+$${estProfit.toFixed(2)} (+${estProfitPercent.toFixed(2)}%)</span>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            profitHtml = `
+                                <div class="mt-2 pt-2 border-t border-themed">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-muted text-xs">Entry Price:</span>
+                                        <span class="text-sm">$${order.entryPrice.toFixed(2)}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-1">
+                                        <span class="text-muted text-xs">Est. Loss:</span>
+                                        <span class="profit-badge profit-negative">-$${Math.abs(estProfit).toFixed(2)} (${estProfitPercent.toFixed(2)}%)</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } else if (order.type === 'buy') {
+                        const estCost = roundTo(order.amount * order.targetPrice, 2);
+                        profitHtml = `
+                            <div class="mt-2 pt-2 border-t border-themed">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-muted text-xs">Est. Cost:</span>
+                                    <span class="text-sm font-semibold">$${estCost.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    return `
+                        <div class="bg-inner rounded-xl p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center gap-2">
+                                    ${symbolDisplay}
+                                    <div>
+                                        <p class="font-bold">${market.name}</p>
+                                        <span class="order-badge ${order.type === 'buy' ? 'order-buy' : 'order-sell'}">
+                                            ${order.type.toUpperCase()}
+                                        </span>
+                                    </div>
+                                </div>
+                                <button onclick="cancelOrder(${index})" class="text-red-400 hover:text-red-300 text-sm">✕ Cancel</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                    <p class="text-muted">Target Price</p>
+                                    <p class="font-semibold">$${order.targetPrice.toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p class="text-muted">Current Price</p>
+                                    <p class="font-semibold">$${currentPrice < 1 ? currentPrice.toFixed(4) : currentPrice.toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p class="text-muted">Amount</p>
+                                    <p class="font-semibold">${order.amount} ${market.symbol}</p>
+                                </div>
+                                <div>
+                                    <p class="text-muted">Distance</p>
+                                    <p class="font-semibold ${diff > 0 ? 'text-yellow-500' : 'text-green-500'}">${diff.toFixed(2)}% away</p>
+                                </div>
+                            </div>
+                            ${profitHtml}
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Order history
+            if (state.orderHistory.length === 0) {
+                historyContainer.innerHTML = '<p class="text-muted text-sm">No executed orders yet</p>';
+            } else {
+                historyContainer.innerHTML = state.orderHistory.slice(0, 10).map(order => {
+                    const market = markets[order.currency];
+                    if (!market) return '';
+                    
+                    let profitBadge = '';
+                    if (order.type === 'sell' && order.profit !== undefined) {
+                        if (order.profit >= 0) {
+                            profitBadge = `<span class="profit-badge profit-positive">+$${order.profit.toFixed(2)}</span>`;
+                        } else {
+                            profitBadge = `<span class="profit-badge profit-negative">-$${Math.abs(order.profit).toFixed(2)}</span>`;
+                        }
+                    }
+                    
+                    return `
+                        <div class="bg-inner rounded-lg px-3 py-2 text-sm">
+                            <div class="flex justify-between items-center">
+                                <span class="order-badge ${order.type === 'buy' ? 'order-buy' : 'order-sell'}">
+                                    ${order.type.toUpperCase()}
+                                </span>
+                                <span class="text-muted text-xs">${new Date(order.executedDate).toLocaleString()}</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-1">
+                                <p>${order.amount} ${market.symbol} @ $${order.executedAt < 1 ? order.executedAt.toFixed(4) : order.executedAt.toFixed(2)}</p>
+                                ${profitBadge}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Create auto order
+        function createOrder() {
+            const currencyKey = document.getElementById('orderCurrency').value;
+            if (!currencyKey || !markets[currencyKey]) {
+                showToast('Please select a valid asset');
+                return;
+            }
+            
+            const market = markets[currencyKey];
+            const orderType = document.getElementById('orderType').value;
+            const targetPrice = parseFloat(document.getElementById('orderTargetPrice').value) || 0;
+            const amount = parseFloat(document.getElementById('orderAmount').value) || 0;
+            const holding = state.holdings[currencyKey];
+            
+            if (targetPrice <= 0) {
+                showToast('Please enter a valid target price');
+                return;
+            }
+            
+            if (amount <= 0) {
+                showToast('Please enter a valid amount');
+                return;
+            }
+            
+            // Validate order
+            if (orderType === 'buy') {
+                if (targetPrice >= market.price) {
+                    showToast('Buy target price should be lower than current price');
+                    return;
+                }
+                const cost = roundTo(amount * targetPrice, 2);
+                if (cost > state.cashBalance) {
+                    showToast(`Insufficient cash! Need $${cost.toFixed(2)} when order executes`);
+                    return;
+                }
+            } else {
+                if (targetPrice <= market.price) {
+                    showToast('Sell target price should be higher than current price');
+                    return;
+                }
+                if (amount > holding.amount + 0.00000001) {
+                    showToast(`Insufficient ${market.symbol} holdings!`);
+                    return;
+                }
+            }
+            
+            // Store entry price for sell orders to calculate profit later
+            const orderData = {
+                currency: currencyKey,
+                type: orderType,
+                targetPrice: targetPrice,
+                amount: amount,
+                createdDate: new Date()
+            };
+            
+            // For sell orders, record the entry price (avg buy price)
+            if (orderType === 'sell' && holding && holding.avgPrice > 0) {
+                orderData.entryPrice = holding.avgPrice;
+            }
+            
+            state.autoOrders.push(orderData);
+            
+            showToast(`Auto ${orderType} order created for ${amount} ${market.symbol}`);
+            
+            document.getElementById('orderTargetPrice').value = '';
+            document.getElementById('orderAmount').value = '';
+            
+            saveState();
+            updateOrdersUI();
+            updateOrderSummary();
+        }
+
+        // Cancel order
+        function cancelOrder(index) {
+            state.autoOrders.splice(index, 1);
+            showToast('Order cancelled');
+            saveState();
+            updateOrdersUI();
+        }
+
+        // Calculate withdraw amounts
+        function calculateWithdraw() {
+            const currencyKey = document.getElementById('withdrawCurrency').value;
+            if (!currencyKey || !markets[currencyKey]) {
+                document.getElementById('withdrawSubtotal').textContent = '$0.00';
+                document.getElementById('withdrawFees').textContent = '-$0.00';
+                document.getElementById('withdrawTaxes').textContent = '-$0.00';
+                document.getElementById('withdrawTotal').textContent = '$0.00';
+                return;
+            }
+            
+            const market = markets[currencyKey];
+            const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+            
+            const subtotal = amount * market.price;
+            const fees = subtotal * 0.03;
+            const taxes = subtotal * 0.06;
+            const total = subtotal - fees - taxes;
+            
+            document.getElementById('withdrawSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('withdrawFees').textContent = `-$${fees.toFixed(2)}`;
+            document.getElementById('withdrawTaxes').textContent = `-$${taxes.toFixed(2)}`;
+            document.getElementById('withdrawTotal').textContent = `$${Math.max(0, total).toFixed(2)}`;
+        }
+
+        // Select currency
+        function selectCurrency(key) {
+            state.selectedCurrency = key;
+            document.getElementById('tradeAmountBuy').value = '';
+            document.getElementById('tradeAmountSell').value = '';
+            saveState();
+            updateUI();
+        }
+
+        // Set trade type
+        function setTradeType(type) {
+            state.tradeType = type;
+            
+            document.getElementById('buyTab').className = `flex-1 py-2 text-center font-bold ${type === 'buy' ? 'tab-active' : 'tab-inactive'}`;
+            document.getElementById('sellTab').className = `flex-1 py-2 text-center font-bold ${type === 'sell' ? 'tab-active' : 'tab-inactive'}`;
+            
+            document.getElementById('tradeAmountBuy').value = '';
+            document.getElementById('tradeAmountSell').value = '';
+            updateTradePanel();
+        }
+
+        // Set max amount
+        function setMaxAmount() {
+            const market = markets[state.selectedCurrency];
+            const holding = state.holdings[state.selectedCurrency];
+            
+            if (state.tradeType === 'buy') {
+                document.getElementById('tradeAmountBuy').value = state.cashBalance.toFixed(2);
+            } else {
+                document.getElementById('tradeAmountSell').value = holding.amount;
+            }
+            
+            calculateReceiveAmount();
+        }
+
+        // Set percentage
+        function setPercentage(percent) {
+            const market = markets[state.selectedCurrency];
+            const holding = state.holdings[state.selectedCurrency];
+            
+            if (state.tradeType === 'buy') {
+                document.getElementById('tradeAmountBuy').value = (state.cashBalance * percent / 100).toFixed(2);
+            } else {
+                document.getElementById('tradeAmountSell').value = (holding.amount * percent / 100);
+            }
+            
+            calculateReceiveAmount();
+        }
+
+        // Calculate receive amount
+        function calculateReceiveAmount() {
+            const market = markets[state.selectedCurrency];
+            
+            if (state.tradeType === 'buy') {
+                const amount = parseFloat(document.getElementById('tradeAmountBuy').value) || 0;
+                const receive = amount / market.price;
+                document.getElementById('receiveAmount').innerHTML = `${receive.toFixed(8)} <span id="receiveSymbol">${market.symbol}</span>`;
+            } else {
+                const amount = parseFloat(document.getElementById('tradeAmountSell').value) || 0;
+                const receive = amount * market.price;
+                document.getElementById('receiveAmount').innerHTML = `$${receive.toFixed(2)} <span id="receiveSymbol">USD</span>`;
+            }
+        }
+
+        // Execute trade
+        function executeTrade() {
+            const market = markets[state.selectedCurrency];
+            const holding = state.holdings[state.selectedCurrency];
+            
+            if (state.tradeType === 'buy') {
+                const amount = parseFloat(document.getElementById('tradeAmountBuy').value) || 0;
+                
+                if (amount <= 0) { showToast('Please enter a valid amount'); return; }
+                if (amount > state.cashBalance + 0.001) { showToast('Insufficient balance'); return; }
+                
+                const actualAmount = Math.min(amount, state.cashBalance);
+                const units = actualAmount / market.price;
+                const newAmount = roundTo(holding.amount + units, 8);
+                const newAvgPrice = roundTo(((holding.amount * holding.avgPrice) + actualAmount) / newAmount, 2);
+                
+                state.cashBalance = roundTo(state.cashBalance - actualAmount, 2);
+                holding.amount = newAmount;
+                holding.avgPrice = newAvgPrice;
+                
+                showToast(`✅ Bought ${units.toFixed(8)} ${market.symbol} for $${actualAmount.toFixed(2)}`);
+                document.getElementById('tradeAmountBuy').value = '';
+            } else {
+                const units = parseFloat(document.getElementById('tradeAmountSell').value) || 0;
+                
+                if (units <= 0) { showToast('Please enter a valid amount'); return; }
+                if (units > holding.amount + 0.00000001) { showToast(`Insufficient ${market.symbol} balance`); return; }
+                
+                const actualUnits = Math.min(units, holding.amount);
+                const usdAmount = roundTo(actualUnits * market.price, 2);
+                state.cashBalance = roundTo(state.cashBalance + usdAmount, 2);
+                holding.amount = roundTo(holding.amount - actualUnits, 8);
+                
+                if (holding.amount < 0.00000001) { holding.amount = 0; holding.avgPrice = 0; }
+                
+                showToast(`✅ Sold ${actualUnits.toFixed(8)} ${market.symbol} for $${usdAmount.toFixed(2)}`);
+                document.getElementById('tradeAmountSell').value = '';
+            }
+            
+            saveState();
+            updateUI();
+        }
+
+        // Withdraw to bank
+        function withdrawToBank() {
+            const currencyKey = document.getElementById('withdrawCurrency').value;
+            if (!currencyKey || !markets[currencyKey]) {
+                showToast('No assets to withdraw');
+                return;
+            }
+            
+            const market = markets[currencyKey];
+            const holding = state.holdings[currencyKey];
+            const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+            
+            if (amount <= 0) { showToast('Please enter a valid amount'); return; }
+            if (amount > holding.amount + 0.00000001) { showToast(`Insufficient ${market.symbol} balance`); return; }
+            
+            const actualAmount = Math.min(amount, holding.amount);
+            const subtotal = roundTo(actualAmount * market.price, 2);
+            const fees = roundTo(subtotal * 0.03, 2);
+            const taxes = roundTo(subtotal * 0.06, 2);
+            const total = roundTo(subtotal - fees - taxes, 2);
+            
+            holding.amount = roundTo(holding.amount - actualAmount, 8);
+            if (holding.amount < 0.00000001) { holding.amount = 0; holding.avgPrice = 0; }
+            
+            state.bankBalance = roundTo(state.bankBalance + total, 2);
+            
+            state.transactions.unshift({
+                type: 'withdraw',
+                currency: market.symbol,
+                currencyName: market.name,
+                amount: actualAmount,
+                subtotal: subtotal,
+                fees: fees,
+                taxes: taxes,
+                total: total,
+                date: new Date()
+            });
+            
+            updateTransactionHistory();
+            document.getElementById('withdrawAmount').value = '';
+            showToast(`✅ Withdrawn $${total.toFixed(2)} to bank (after 9% deductions)`);
+            saveState();
+            updateUI();
+        }
+
+        // Update transaction history
+        function updateTransactionHistory() {
+            const container = document.getElementById('transactionHistory');
+            
+            if (state.transactions.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center py-8">No transactions yet</p>';
+                return;
+            }
+            
+            container.innerHTML = state.transactions.map(tx => `
+                <div class="bg-inner rounded-xl p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold">Withdrawal</p>
+                            <p class="text-sm text-muted">${new Date(tx.date).toLocaleString()}</p>
+                        </div>
+                        <span class="text-green-500 font-bold">+$${tx.total.toFixed(2)}</span>
+                    </div>
+                    <div class="text-sm text-muted">
+                        <p>${tx.amount.toFixed(8)} ${tx.currency} @ $${(tx.subtotal / tx.amount).toFixed(2)}</p>
+                        <p>Fees: -$${tx.fees.toFixed(2)} | Taxes: -$${tx.taxes.toFixed(2)}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Show section
+        function showSection(section) {
+            document.getElementById('trade-section').classList.add('hidden');
+            document.getElementById('orders-section').classList.add('hidden');
+            document.getElementById('wallet-section').classList.add('hidden');
+            document.getElementById('bank-section').classList.add('hidden');
+            document.getElementById('settings-section').classList.add('hidden');
+            document.getElementById(`${section}-section`).classList.remove('hidden');
+            
+            if (section === 'orders') {
+                updateOrderCurrencyOptions();
+                updateOrdersUI();
+            }
+        }
+
+        // Toggle theme
+        function toggleTheme() {
+            state.darkMode = !state.darkMode;
+            applyTheme();
+            saveState();
+            updateSettings();
+        }
+
+        // Apply theme
+        function applyTheme() {
+            if (state.darkMode) {
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.add('light-mode');
+            }
+        }
+
+        // Buy rank
+        function buyRank() {
+            const cost = calculateRankCost(state.rank);
+            
+            if (state.cashBalance < cost) {
+                showToast(`Insufficient balance! Need $${cost.toFixed(2)}`);
+                return;
+            }
+            
+            state.cashBalance = roundTo(state.cashBalance - cost, 2);
+            state.rank++;
+            state.rankHistory.push({ rank: state.rank, cost: cost, date: new Date() });
+            
+            showToast(`🎉 Congratulations! You are now Rank #${state.rank}!`);
+            saveState();
+            updateUI();
+        }
+
+        // Confirm reset
+        function confirmReset() {
+            document.getElementById('resetModal').classList.remove('hidden');
+        }
+
+        // Close reset modal
+        function closeResetModal() {
+            document.getElementById('resetModal').classList.add('hidden');
+        }
+
+        // Reset progress
+        function resetProgress() {
+            localStorage.removeItem('financeAppState');
+            
+            // Reset state
+            state = { ...JSON.parse(JSON.stringify(defaultState)), userId: generateUserId() };
+            
+            // Reinitialize holdings
+            Object.keys(markets).forEach(key => {
+                state.holdings[key] = { amount: 0, avgPrice: 0 };
+            });
+            
+            // Reset prices
+            Object.keys(markets).forEach(key => {
+                markets[key].price = basePrices[key];
+                markets[key].change = 0;
+            });
+            
+            initPriceHistory();
+            closeResetModal();
+            applyTheme();
+            saveState();
+            updateUI();
+            updateTransactionHistory();
+            updateOrdersUI();
+            showToast('✅ Progress has been reset! Starting fresh with $50.00');
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Event listeners
+        document.getElementById('tradeAmountBuy').addEventListener('input', calculateReceiveAmount);
+        document.getElementById('tradeAmountSell').addEventListener('input', calculateReceiveAmount);
+        document.getElementById('withdrawAmount').addEventListener('input', calculateWithdraw);
+        document.getElementById('withdrawCurrency').addEventListener('change', updateBank);
+        document.getElementById('orderType').addEventListener('change', updateOrderInfo);
+        document.getElementById('orderCurrency').addEventListener('change', updateOrderInfo);
+        document.getElementById('orderTargetPrice').addEventListener('input', updateOrderSummary);
+        document.getElementById('orderAmount').addEventListener('input', updateOrderSummary);
+
+        // Initialize app
+        loadState();
+        initPriceHistory();
+        
+        document.getElementById('userId').textContent = state.userId;
+        document.getElementById('bankAccountId').textContent = state.userId;
+        document.getElementById('settingsUserId').textContent = state.userId;
+        
+        updateOrderCurrencyOptions();
+        updateUI();
+        updateTransactionHistory();
+        updateOrdersUI();
+
+        // Price update interval (1.5 seconds)
+        setInterval(updatePrices, 1500);
+
+        // Handle window resize for chart
+        window.addEventListener('resize', () => {
+            drawChart();
+        });
+    </script>
+</body>
+</html>
